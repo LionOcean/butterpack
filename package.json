@@ -1,0 +1,36 @@
+{
+  "name": "@alanchenchen/butterpack",
+  "version": "0.0.1",
+  "description": "a development bundle server tool for modern browser",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": "bin/butterpack",
+  "scripts": {
+    "start": "npm run serve",
+    "serve": "ts-node src/core/index.ts",
+    "build": "tsc"
+  },
+  "author": "Alan Chen",
+  "keywords": [
+    "butterpack",
+    "bundle javascript",
+    "tool"
+  ],
+  "license": "996.ICU",
+  "private": false,
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/alanchenchen/butterpack"
+  },
+  "homepage": "https://github.com/alanchenchen/butterpack",
+  "bugs": {
+    "url": "https://github.com/alanchenchen/butterpack/issues",
+    "email": "739709491@qq.com"
+  },
+  "devDependencies": {
+    "@babel/parser": "^7.10.4",
+    "@types/node": "^14.0.20",
+    "ts-node": "^8.10.2",
+    "typescript": "^3.9.6"
+  }
+}
