@@ -1,40 +1,26 @@
-import { parse } from "@babel/parser";
-import { readFileSync } from "fs";
-import { resolve, extname, join, relative } from "path";
-import { Dep, ModuleInfo, SingleEntryMap } from "./moduleMap.type";
+import { resolve, extname, relative } from "path";
+import { ModuleInfo, SingleEntryMap } from "./moduleMap.type";
 import { EntryConfig } from "../butterPackConfig.type";
+import { genCodeAndUseLoader, genDeps } from "./helper";
 
 /**
  * 读取单个模块信息.
  * 
  * @param rootPath
  * @param templatePath
+ * @param MIME
  */
-const readModuleDeps = (rootPath: string, templatePath: string): ModuleInfo => {
-    const code: string = readFileSync(rootPath, "utf-8");
-    const result: any = parse(code, {
-        sourceType: "module",
-        plugins: [
-            "jsx",
-            "typescript"
-        ]
-    });
-    const rootEsModulePath: string = relative(templatePath, rootPath);
-    const ImportDeclarationList: any[] = result.program.body.filter((node: any) => node.type === "ImportDeclaration");
-    const deps: Dep[] = ImportDeclarationList.map((item: any): Dep => {
-        const moduleVal: string = item.source.value;
-        const isAlisModule: boolean = extname(item.source.value) === "";
-        const type: string = extname(item.source.value) || ".js";
-        const isScript: boolean = type === ".js" || type === ".ts";
-        const replaceLoc: number[] = [item.source.start, item.source.end - 1];
-        let path: string = join(rootPath, "..", item.source.value);
-        if (isAlisModule) {
-            path = join(rootPath, "..", `${item.source.value}.js`);
-        }
-        const esModulePath: string = relative(templatePath, path);
-        return { path, esModulePath, type, isScript, moduleVal, replaceLoc };
-    });
-    return { path: rootPath, code, esModulePath: rootEsModulePath, deps };
+const readModuleDeps = async (rootPath: string, templatePath: string, MIME: string): Promise<ModuleInfo> => {
+    try {
+        let { code, rootEsModulePath, type } = await genCodeAndUseLoader(rootPath, templatePath);
+        
+        /* ----开始获取经过loader处理后的js code的AST，获取其import语法依赖---- */
+        const deps = type === ".js" ? genDeps(code, rootPath, templatePath) : [];
+        return { path: rootPath, code, esModulePath: rootEsModulePath, type, deps };
+    } catch (error) {
+        console.log("readModuleDeps errors: ", error);
+        return error;
+    }
 }
 
 /**
@@ -42,17 +28,23 @@ const readModuleDeps = (rootPath: string, templatePath: string): ModuleInfo => {
  * 
  * @param entryPath
  * @param templatePath
+ * @param MIME
  * @param cb
  */
-const readEntryModuleRecursivly = (entryPath: string, templatePath: string, cb: any) => {
+const readEntryModuleRecursivly = async (
+    entryPath: string,
+    templatePath: string,
+    MIME: string,
+    cb: any
+) => {
     try {
-        const { deps, ...rest } = readModuleDeps(entryPath, templatePath);
+        const { deps, ...rest } = await readModuleDeps(entryPath, templatePath, MIME);
         cb({ deps, ...rest });
-        if (deps.length > 0) {
-            deps.forEach((dep: Dep) => readEntryModuleRecursivly(dep.path, templatePath, cb));
+        for (const dep of deps) {
+            await readEntryModuleRecursivly(dep.path, templatePath, dep.type, cb);
         }
     } catch (error) {
-        console.log(error);
+        return error;
     }
 }
 
@@ -62,12 +54,12 @@ const readEntryModuleRecursivly = (entryPath: string, templatePath: string, cb: 
  * @param script
  * @param template
  */
-export const readEntryAndGenMap = ({ script, template }: EntryConfig): SingleEntryMap => {
+export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Promise<SingleEntryMap> => {
     try {
         const entryPath: string = resolve(process.cwd(), script);
         const templatePath: string = resolve(process.cwd(), template);
         const moduleList: ModuleInfo[] = [];
-        readEntryModuleRecursivly(entryPath, templatePath, (item: ModuleInfo) => {
+        await readEntryModuleRecursivly(entryPath, templatePath, extname(entryPath), (item: ModuleInfo) => {
             moduleList.push(item);
         });
         return { entry: script, template, moduleList }

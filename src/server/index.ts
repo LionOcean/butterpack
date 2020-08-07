@@ -1,6 +1,8 @@
 import { HttpServerSchema } from "./server.type";
 import { createServer, Server, IncomingMessage, ServerResponse } from "http";
 
+const iconRoute: string = "/favicon.ico";
+
 class HttpServer {
     private serverSchemaList: HttpServerSchema[] = [];
     private httpIns: Server = null;
@@ -12,6 +14,8 @@ class HttpServer {
             const targetSchema = this.serverSchemaList.find((item) => item.path === url);
             if (isPathFit) {
                 targetSchema.handler(req, res);
+            } else if (url === iconRoute) {
+                res.end("");
             } else {
                 throw new Error("no router has been applied");
             }

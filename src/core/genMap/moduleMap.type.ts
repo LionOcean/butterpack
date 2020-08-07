@@ -1,11 +1,7 @@
 /**
  * 模块文件的依赖项.
  */
-export declare interface Dep {
-    path: string; // 依赖模块绝对路径
-    esModulePath: string; // 依赖模块相对路径，用在拼接es模块
-    type: string; // 依赖模块MIME
-    isScript: boolean;
+export declare interface Dep extends ModuleInfo {
     moduleVal: string; // 依赖模块import地址的AST字段
     replaceLoc: number[]; // 依赖模块import地址的AST字段起始和结束索引
 }
@@ -16,8 +12,9 @@ export declare interface Dep {
 export declare interface ModuleInfo {
     path: string; // 资源的绝对路径
     esModulePath: string; // 资源的相对路径，用在拼接es模块
-    code: string; // 资源的代码字符串
-    deps: Dep[]; // 资源的依赖列表
+    type: string; // 资源的MIME
+    code?: string; // 资源的代码字符串
+    deps?: Dep[]; // 资源的依赖列表
 }
 
 /**
