@@ -8,7 +8,7 @@ module.exports = {
         try {
             const data = readFileSync(path, "utf-8");
             const result = await transform(data, { loader: "tsx" });
-            console.log("ts loader result: ", result);
+            // console.log("ts loader result: ", result);
             return result.js;
         } catch (error) {
             return "";

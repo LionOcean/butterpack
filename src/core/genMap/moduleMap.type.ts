@@ -4,6 +4,7 @@
 export declare interface Dep extends ModuleInfo {
     moduleVal: string; // 依赖模块import地址的AST字段
     replaceLoc: number[]; // 依赖模块import地址的AST字段起始和结束索引
+    isNpmModule: boolean; // 是否为npm模块
 }
 
 /**

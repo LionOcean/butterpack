@@ -5,5 +5,8 @@ module.exports = {
     ],
     staticDir: "./example",
     loaders: [ts_loader],
+    alias: {
+        "@": "example"
+    },
     fileExts: [".ts", ".tsx"]
 }

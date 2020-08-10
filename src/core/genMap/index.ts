@@ -1,4 +1,4 @@
-import { resolve, extname, relative } from "path";
+import { resolve, extname } from "path";
 import { ModuleInfo, SingleEntryMap } from "./moduleMap.type";
 import { EntryConfig } from "../butterPackConfig.type";
 import { genCodeAndUseLoader, genDeps } from "./helper";
@@ -7,15 +7,13 @@ import { genCodeAndUseLoader, genDeps } from "./helper";
  * 读取单个模块信息.
  * 
  * @param rootPath
- * @param templatePath
  * @param MIME
  */
-const readModuleDeps = async (rootPath: string, templatePath: string, MIME: string): Promise<ModuleInfo> => {
+const readModuleDeps = async (rootPath: string, MIME: string): Promise<ModuleInfo> => {
     try {
-        let { code, rootEsModulePath, type } = await genCodeAndUseLoader(rootPath, templatePath);
-        
+        const { code, rootEsModulePath, type } = await genCodeAndUseLoader(rootPath);
         /* ----开始获取经过loader处理后的js code的AST，获取其import语法依赖---- */
-        const deps = type === ".js" ? genDeps(code, rootPath, templatePath) : [];
+        const deps = type === ".js" ? await genDeps(code, rootPath) : [];
         return { path: rootPath, code, esModulePath: rootEsModulePath, type, deps };
     } catch (error) {
         console.log("readModuleDeps errors: ", error);
@@ -27,21 +25,19 @@ const readModuleDeps = async (rootPath: string, templatePath: string, MIME: stri
  * 通过递归读取单个入口文件的所有依赖模块信息.
  * 
  * @param entryPath
- * @param templatePath
  * @param MIME
  * @param cb
  */
 const readEntryModuleRecursivly = async (
     entryPath: string,
-    templatePath: string,
     MIME: string,
     cb: any
 ) => {
     try {
-        const { deps, ...rest } = await readModuleDeps(entryPath, templatePath, MIME);
+        const { deps, ...rest } = await readModuleDeps(entryPath, MIME);
         cb({ deps, ...rest });
         for (const dep of deps) {
-            await readEntryModuleRecursivly(dep.path, templatePath, dep.type, cb);
+            await readEntryModuleRecursivly(dep.path, dep.type, cb);
         }
     } catch (error) {
         return error;
@@ -59,7 +55,7 @@ export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Pro
         const entryPath: string = resolve(process.cwd(), script);
         const templatePath: string = resolve(process.cwd(), template);
         const moduleList: ModuleInfo[] = [];
-        await readEntryModuleRecursivly(entryPath, templatePath, extname(entryPath), (item: ModuleInfo) => {
+        await readEntryModuleRecursivly(entryPath, extname(entryPath), (item: ModuleInfo) => {
             moduleList.push(item);
         });
         return { entry: script, template, moduleList }

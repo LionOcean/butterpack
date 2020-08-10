@@ -1,4 +1,4 @@
-import { story } from "./c.ts";
+import { story } from "./c";
 
 const slogan: string = "butterpack is fantastic!!!";
 console.log(slogan);

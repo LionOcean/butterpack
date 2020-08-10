@@ -1,17 +1,17 @@
 import { Dep } from "./moduleMap.type";
 import { Loader } from "../butterPackConfig.type";
 import { loaders } from "../genPackConfig";
-import { extname, join, relative } from "path";
+import { extname, join, basename } from "path";
 import { readFileSync } from "fs";
 import { parse } from "@babel/parser";
+import { resolveNpmModulePath, checkExistedFileExt, checkDefinedAliasPathSymbol } from "./utils";
 
 /**
  * 根据文件地址，通过loader处理获取js代码
  * 
  * @param rootPath 
- * @param templatePath 
  */
-export const genCodeAndUseLoader = async (rootPath: string, templatePath: string) => {
+export const genCodeAndUseLoader = async (rootPath: string) => {
     try {
         let code: string = "";
         let rootEsModulePath: string = rootPath;
@@ -28,11 +28,11 @@ export const genCodeAndUseLoader = async (rootPath: string, templatePath: string
             if (code === "") {
                 throw new Error("no code returned from loader");
             }
-        } else {
+        } else if (extname(rootEsModulePath) === ".js") {
             code = readFileSync(rootPath, "utf-8");
         }
-        rootEsModulePath = relative(templatePath, rootEsModulePath);
-        const type: string = extname(rootEsModulePath) || ".js";
+        rootEsModulePath = `/${basename(rootEsModulePath)}`;
+        const type: string = extname(rootEsModulePath);
         return { code, rootEsModulePath, type };
     } catch (error) {
         console.log("genCodeAndUseLoader error: ", error);
@@ -45,14 +45,11 @@ export const genCodeAndUseLoader = async (rootPath: string, templatePath: string
  * 
  * @param code 
  * @param rootPath 
- * @param templatePath 
- * @param loaders 
  */
-export const genDeps = (
+export const genDeps = async (
     code: string,
     rootPath: string,
-    templatePath: string
-): Dep[] => {
+): Promise<Dep[]> => {
     try {
         const result: any = parse(code, {
             sourceType: "module",
@@ -62,27 +59,38 @@ export const genDeps = (
             ]
         });
         const ImportDeclarationList: any[] = result.program.body.filter((node: any) => node.type === "ImportDeclaration");
-        return ImportDeclarationList.map((item: any): Dep => {
+        const depModuleInfo: Dep[] = [];
+        for (const item of ImportDeclarationList) {
             const moduleVal: string = item.source.value;
-            const isAlisModule: boolean = extname(moduleVal) === "";
             const replaceLoc: number[] = [item.source.start, item.source.end - 1];
-            let path: string = join(rootPath, "..", moduleVal);
-            if (isAlisModule) {
-                path = join(rootPath, "..", `${moduleVal}.js`);
+            /* ------开始处理path的alias和extname补全------ */
+            const { isNpmModule, modulePath } = resolveNpmModulePath(moduleVal);
+            let path: string = "";
+            if (isNpmModule) {
+                path = modulePath;
+            } else {
+                const { hasAliasSymbol, newPath } = checkDefinedAliasPathSymbol(moduleVal);
+                if (hasAliasSymbol) {
+                    path = newPath;
+                } else {
+                    path = join(rootPath, "..", moduleVal);
+                }
+                path = await checkExistedFileExt(path);
             }
             let esModulePath: string = path;
             /* ----loader开始处理---- */
             const useLoader: Loader = loaders.find(({ rule }: Loader) => {
-                return rule.test(moduleVal);
+                return rule.test(path);
             });
             if (useLoader) {
                 esModulePath = path.replace(extname(path), ".js");
             }
-            esModulePath = relative(templatePath, esModulePath);
+            esModulePath = `/${basename(esModulePath)}`;
             /* ----loader处理结束---- */
-            const type: string = extname(esModulePath) || ".js";
-            return { path, esModulePath, type, moduleVal, replaceLoc };
-        });
+            const type: string = extname(esModulePath);
+            depModuleInfo.push({ path, esModulePath, type, moduleVal, replaceLoc, isNpmModule });
+        }
+        return depModuleInfo;
     } catch (error) {
         console.log("genDeps error: ", error);
         return error;

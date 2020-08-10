@@ -1,0 +1,1 @@
+export const RESOLVE_STATIC_RESOURCE = "resolve_static_resource";
