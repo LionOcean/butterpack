@@ -1,10 +1,6 @@
-export declare interface ResourceRoute {
-    path: string;
-    data: string;
-    contentType: string;
-}
+import { ModuleInfo } from "../genMap/moduleMap.type";
 
 export declare interface TemplateRoute {
     tpl: string;
-    resource: ResourceRoute[];
+    moduleList: ModuleInfo[];
 }

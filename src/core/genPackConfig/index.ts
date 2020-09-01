@@ -6,3 +6,4 @@ export const staticDir = config.staticDir;
 export const loaders = config.loaders;
 export const alias = config.alias;
 export const fileExts = [...DEFAULT_EXTNAMES, ...config.fileExts];
+export const plugins = config.plugins;

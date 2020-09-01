@@ -2,6 +2,7 @@ import { resolve, extname } from "path";
 import { ModuleInfo, SingleEntryMap } from "./moduleMap.type";
 import { EntryConfig } from "../butterPackConfig.type";
 import { genCodeAndUseLoader, genDeps } from "./helper";
+import { shakeModuleList } from "./utils";
 
 /**
  * 读取单个模块信息.
@@ -54,10 +55,11 @@ export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Pro
     try {
         const entryPath: string = resolve(process.cwd(), script);
         const templatePath: string = resolve(process.cwd(), template);
-        const moduleList: ModuleInfo[] = [];
+        let moduleList: ModuleInfo[] = [];
         await readEntryModuleRecursivly(entryPath, extname(entryPath), (item: ModuleInfo) => {
             moduleList.push(item);
         });
+        shakeModuleList(moduleList);
         return { entry: script, template, moduleList }
     } catch (error) {
         console.log("[readEntryAndGenMap error]:", error);

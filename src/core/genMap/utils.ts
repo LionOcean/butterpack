@@ -1,6 +1,7 @@
 import { access, constants, readFile } from "fs";
 import { join, extname } from "path";
 import { fileExts, alias } from "../genPackConfig";
+import { ModuleInfo } from "./moduleMap.type";
 
 const { F_OK, R_OK } = constants;
 
@@ -95,4 +96,17 @@ export const resolveNpmModulePath = (path: string) => {
         modulePath = join(process.cwd(), "node_modules", `${path}/${moduleEntry}`);
     }
     return { isNpmModule, modulePath };
+}
+
+/**
+ * 模块信息列表去重
+ * 
+ * @param list
+ */
+export const shakeModuleList = (list: ModuleInfo[]) => {
+    for (let i = 0; i <= list.length - 1; i++) {
+        if (list[i].path === list[i+1].path) {
+            list.splice(i, 1);
+        }
+    }
 }

@@ -17,7 +17,8 @@ class HttpServer {
             } else if (url === iconRoute) {
                 res.end("");
             } else {
-                throw new Error("no router has been applied");
+                const errMsg = `no router has been applied to path ${url}`
+                throw new Error(errMsg);
             }
         })
     }

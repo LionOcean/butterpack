@@ -7,7 +7,7 @@
   "bin": "bin/butterpack",
   "scripts": {
     "start": "npm run serve",
-    "serve": "ts-node src/core/index.ts",
+    "serve": "ts-node src/index.ts",
     "build": "tsc"
   },
   "author": "Alan Chen",

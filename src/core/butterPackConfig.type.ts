@@ -1,3 +1,5 @@
+import { EventEmitter } from "events";
+
 export declare interface EntryConfig {
     path: string;
     script: string;
@@ -10,3 +12,5 @@ export declare interface Loader {
     exclude?: RegExp;
     transform: (path: string) => Promise<string>
 }
+
+export declare type Plugin = (events: EventEmitter) => void;
