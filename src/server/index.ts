@@ -18,7 +18,6 @@ class HttpServer {
                 res.end("");
             } else {
                 const errMsg = `no router has been applied to path ${url}`
-                throw new Error(errMsg);
             }
         })
     }

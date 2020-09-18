@@ -1,5 +1,5 @@
 # butterpack
-a development bundle server tool for modern browser
+a bundle tool of development server for modern browser
 
 ### demo
 * install devDependencies, `yarn` or `npm install`

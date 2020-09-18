@@ -5,7 +5,7 @@ import { EntryConfig } from "../butterPackconfig.type";
 import { TemplateRoute } from "./routeConfig.type";
 import { TPL_SEPARATOR_RULE, TPL_SEPARATOR_VALUE } from "../constant";
 import eventBus from "../eventBus";
-import { RESOLVE_RESOURCE_MODULE } from "../eventBus/constant";
+import { HOOK_AFTER_RESOLVE_MODULELIST } from "../eventBus/constant";
 
 /**
  * 生成所有的静态页面route path.
@@ -27,17 +27,18 @@ export const genTplRouteData = async (config: EntryConfig): Promise<TemplateRout
         const htmlPath: string = resolve(process.cwd(), template);
         let tpl: string = readFileSync(htmlPath, "utf-8").split(TPL_SEPARATOR_RULE)[0];
         const tplScript: string = moduleList.map(moduleInfo => {
-            if (moduleInfo.type === ".js") {
+            if (moduleInfo.type === ".js" && moduleInfo.lazyLoad === false) {
                 return `<script async type="module" src="${moduleInfo.esModulePath}"></script>`;
             } else {
                 return "";
             }
         }).join("");
         tpl = `${tpl}${tplScript}${TPL_SEPARATOR_VALUE}`;
-        eventBus.emit(RESOLVE_RESOURCE_MODULE, moduleList, tpl);
-        // console.log(moduleList);
+        const setModuleList = (list: any) => moduleList = list;
+        const setTpl = (val: any) => tpl = val;
+        eventBus.emit(HOOK_AFTER_RESOLVE_MODULELIST, [JSON.parse(JSON.stringify(moduleList)), setModuleList], [tpl, setTpl]);
         return { tpl, moduleList };
     } catch (error) {
-        console.log("genTplRouteData error:", error);
+        console.log("[genTplRouteData error]:", error);
     }
 }

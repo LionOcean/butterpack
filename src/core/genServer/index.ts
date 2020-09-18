@@ -3,7 +3,7 @@ import httpServer from "../../server";
 import { genTplRoutePath, genTplRouteData } from "../genResponseContent";
 import { entry, staticDir } from "../genPackConfig";
 import eventBus from "../eventBus";
-import { RESOLVE_RESOURCE_SERVER_RESPONSE } from "../eventBus/constant";
+import { HOOK_BEFORE_SERVER_RESPONSE_STATICFILE } from "../eventBus/constant";
 
 const app = httpServer();
 export const serverStart = () => {
@@ -13,7 +13,7 @@ export const serverStart = () => {
             console.log("触发主页请求...");
             const { tpl, moduleList } = await genTplRouteData(entry[i]);
             res.end(tpl);
-            eventBus.emit(RESOLVE_RESOURCE_SERVER_RESPONSE, moduleList, app);
+            eventBus.emit(HOOK_BEFORE_SERVER_RESPONSE_STATICFILE, JSON.parse(JSON.stringify(moduleList)), app);
         });
     });
     app.listen(8080, () => {

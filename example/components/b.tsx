@@ -1,9 +1,9 @@
-import { story } from "./c";
+// import { story } from "./c";
 
-const slogan: string = "butterpack is fantastic!!!";
-console.log(slogan);
+// const slogan: string = "butterpack is fantastic!!!";
+// console.log(slogan);
 const jsx = () => (<div></div>);
 
-console.log(story);
+// console.log(story);
 
 export const num: number = 26;

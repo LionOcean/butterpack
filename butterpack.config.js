@@ -11,7 +11,7 @@ module.exports = {
         {
             rule: /(.ts|.tsx|.jsx)$/,
             include: /example/, 
-            transform: ts_loader
+            transform: ts_loader()
         }
     ],
     plugins: [

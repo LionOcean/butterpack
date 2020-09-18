@@ -8,16 +8,16 @@ import { shakeModuleList } from "./utils";
  * 读取单个模块信息.
  * 
  * @param rootPath
- * @param MIME
+ * @param lazyLoad
  */
-const readModuleDeps = async (rootPath: string, MIME: string): Promise<ModuleInfo> => {
+const readModuleAndDeps = async (rootPath: string, lazyLoad: boolean): Promise<ModuleInfo> => {
     try {
         const { code, rootEsModulePath, type } = await genCodeAndUseLoader(rootPath);
         /* ----开始获取经过loader处理后的js code的AST，获取其import语法依赖---- */
         const deps = type === ".js" ? await genDeps(code, rootPath) : [];
-        return { path: rootPath, code, esModulePath: rootEsModulePath, type, deps };
+        return { path: rootPath, code, esModulePath: rootEsModulePath, type, deps, lazyLoad };
     } catch (error) {
-        console.log("readModuleDeps errors: ", error);
+        console.log("[readModuleDeps error]: ", error);
         return error;
     }
 }
@@ -26,19 +26,19 @@ const readModuleDeps = async (rootPath: string, MIME: string): Promise<ModuleInf
  * 通过递归读取单个入口文件的所有依赖模块信息.
  * 
  * @param entryPath
- * @param MIME
+ * @param lazyLoad
  * @param cb
  */
 const readEntryModuleRecursivly = async (
     entryPath: string,
-    MIME: string,
+    lazyLoad: boolean,
     cb: any
 ) => {
     try {
-        const { deps, ...rest } = await readModuleDeps(entryPath, MIME);
+        const { deps, ...rest } = await readModuleAndDeps(entryPath, lazyLoad);
         cb({ deps, ...rest });
         for (const dep of deps) {
-            await readEntryModuleRecursivly(dep.path, dep.type, cb);
+            await readEntryModuleRecursivly(dep.path, dep.lazyImport, cb);
         }
     } catch (error) {
         return error;
@@ -56,7 +56,7 @@ export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Pro
         const entryPath: string = resolve(process.cwd(), script);
         const templatePath: string = resolve(process.cwd(), template);
         let moduleList: ModuleInfo[] = [];
-        await readEntryModuleRecursivly(entryPath, extname(entryPath), (item: ModuleInfo) => {
+        await readEntryModuleRecursivly(entryPath, false, (item: ModuleInfo) => {
             moduleList.push(item);
         });
         shakeModuleList(moduleList);

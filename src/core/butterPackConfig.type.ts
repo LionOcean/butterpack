@@ -13,4 +13,4 @@ export declare interface Loader {
     transform: (path: string) => Promise<string>
 }
 
-export declare type Plugin = (events: EventEmitter) => void;
+export declare type Plugin = (events: EventEmitter, hooks: any) => void;

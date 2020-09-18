@@ -4,7 +4,12 @@ import { loaders } from "../genPackConfig";
 import { extname, join, basename } from "path";
 import { readFileSync } from "fs";
 import { parse } from "@babel/parser";
-import { resolveNpmModulePath, checkExistedFileExt, checkDefinedAliasPathSymbol } from "./utils";
+import {
+    resolveNpmModulePath,
+    checkExistedFileExt,
+    checkDefinedAliasPathSymbol,
+    findDynamicImportStatementSytax
+} from "./utils";
 
 /**
  * 根据文件地址，通过loader处理获取js代码
@@ -35,7 +40,7 @@ export const genCodeAndUseLoader = async (rootPath: string) => {
         const type: string = extname(rootEsModulePath);
         return { code, rootEsModulePath, type };
     } catch (error) {
-        console.log("genCodeAndUseLoader error: ", error);
+        console.log("[genCodeAndUseLoader error]: ", error);
         return error;
     }
 }
@@ -51,6 +56,7 @@ export const genDeps = async (
     rootPath: string,
 ): Promise<Dep[]> => {
     try {
+        const depModuleInfo: Dep[] = [];
         const result: any = parse(code, {
             sourceType: "module",
             plugins: [
@@ -58,14 +64,18 @@ export const genDeps = async (
                 "typescript"
             ]
         });
-        const ImportDeclarationList: any[] = result.program.body.filter((node: any) => node.type === "ImportDeclaration");
-        const depModuleInfo: Dep[] = [];
+        // parse没有对动态import区分type，所以手动处理
+        const DynamicImportDeclarationList: any[] = findDynamicImportStatementSytax(code);
+        let ImportDeclarationList: any[] = result.program.body.filter((node: any) => node.type === "ImportDeclaration");
+        ImportDeclarationList = [...ImportDeclarationList, ...DynamicImportDeclarationList];
+
         for (const item of ImportDeclarationList) {
             const moduleVal: string = item.source.value;
             const replaceLoc: number[] = [item.source.start, item.source.end - 1];
             /* ------开始处理path的alias和extname补全------ */
             const { isNpmModule, modulePath } = resolveNpmModulePath(moduleVal);
             let path: string = "";
+            const lazyImport = item.lazyImport ? true : false;
             if (isNpmModule) {
                 path = modulePath;
             } else {
@@ -88,11 +98,11 @@ export const genDeps = async (
             esModulePath = `/${basename(esModulePath)}`;
             /* ----loader处理结束---- */
             const type: string = extname(esModulePath);
-            depModuleInfo.push({ path, esModulePath, type, moduleVal, replaceLoc, isNpmModule });
+            depModuleInfo.push({ path, esModulePath, type, moduleVal, replaceLoc, isNpmModule, lazyImport });
         }
         return depModuleInfo;
     } catch (error) {
-        console.log("genDeps error: ", error);
+        console.log("[genDeps error]: ", error);
         return error;
     }
 }

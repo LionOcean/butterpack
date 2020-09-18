@@ -5,6 +5,7 @@ export declare interface Dep extends ModuleInfo {
     moduleVal: string; // 依赖模块import地址的AST字段
     replaceLoc: number[]; // 依赖模块import地址的AST字段起始和结束索引
     isNpmModule: boolean; // 是否为npm模块
+    lazyImport: boolean; // 模块是否被动态import导入
 }
 
 /**
@@ -16,6 +17,7 @@ export declare interface ModuleInfo {
     type: string; // 资源的MIME
     code?: string; // 资源的代码字符串
     deps?: Dep[]; // 资源的依赖列表
+    lazyLoad?: boolean; // 模块是否被懒加载
 }
 
 /**

@@ -1,2 +1,8 @@
-export const RESOLVE_RESOURCE_MODULE = "resolve_resource_module";
-export const RESOLVE_RESOURCE_SERVER_RESPONSE = "resolve_resoure_server_response";
+/**
+ * 插件钩子：处理完所有模块列表之后
+ */
+export const HOOK_AFTER_RESOLVE_MODULELIST = "hook:after_resolve_modulelist";
+/**
+ * 插件钩子：服务器返回静态资源之前
+ */
+export const HOOK_BEFORE_SERVER_RESPONSE_STATICFILE = "hook:before_server_response_staticfile";

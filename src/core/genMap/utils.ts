@@ -2,6 +2,7 @@ import { access, constants, readFile } from "fs";
 import { join, extname } from "path";
 import { fileExts, alias } from "../genPackConfig";
 import { ModuleInfo } from "./moduleMap.type";
+import { DYNAMIC_IMPORTED_STATEMENT_RULE } from "../constant";
 
 const { F_OK, R_OK } = constants;
 
@@ -49,8 +50,8 @@ export const checkExistedFileExt = async (path: string) => {
             }
         }
         if (targetPath === "") {
-           console.log(`none file extname is valid, you should complete imported file path extname ${path}`);
-           process.exit(1);
+            console.log(`none file extname is valid, you should complete imported file path extname ${path}`);
+            process.exit(1);
         } else {
             return targetPath;
         }
@@ -104,9 +105,60 @@ export const resolveNpmModulePath = (path: string) => {
  * @param list
  */
 export const shakeModuleList = (list: ModuleInfo[]) => {
-    for (let i = 0; i <= list.length - 1; i++) {
-        if (list[i].path === list[i+1].path) {
-            list.splice(i, 1);
+    if (list.length > 1) {
+        for (let i = 0; i <= list.length - 1; i++) {
+            if (
+                i !== list.length - 1 &&
+                list[i].path === list[i + 1].path
+            ) {
+                list.splice(i, 1);
+                i--;
+            }
         }
     }
+}
+
+/**
+ * 清除所有空格
+ * 
+ * @param str 
+ */
+export const trimAll = (str: string) => {
+    const list = str.split("");
+    for (let i = 0; i < list.length; i++) {
+        if (list[i] === " ") {
+            list.splice(i, 1);
+            i--;
+        }
+    }
+    return list.join("");
+}
+
+/**
+ * 找出当前代码中动态import的依赖地址
+ * 
+ * @param code
+ */
+export const findDynamicImportStatementSytax = (code: string) => {
+    const result = code.match(DYNAMIC_IMPORTED_STATEMENT_RULE);
+    let list: any[] = [];
+    if (result !== null) {
+        list = result.map(item => {
+            const start = item.indexOf("(");
+            const end = item.indexOf(")");
+            const trimItem = trimAll(item);
+            const valStart = `import('`.length;
+            const valEnd = trimItem.length - 2;
+            const value = trimItem.substring(valStart, valEnd);
+            return {
+                source: {
+                    value,
+                    start,
+                    end,
+                },
+                lazyImport: true
+            }
+        });
+    }
+    return list;
 }

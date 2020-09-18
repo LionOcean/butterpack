@@ -1,7 +1,5 @@
-import { Plugin } from "./core/butterPackConfig.type";
-import { plugins } from "./core/genPackConfig";
-import eventBus from "./core/eventBus";
+import { installPlugins } from "./core/genPackConfig";
 import { serverStart } from "./core/genServer";
 
-plugins.forEach((plugin: Plugin) => plugin(eventBus));
+installPlugins();
 serverStart();
