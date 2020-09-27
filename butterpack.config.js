@@ -1,6 +1,6 @@
 const ts_loader = require("./src/loaders/ts_loader");
-const resolveJsModuleRoute = require("./src/plugins/resolveJsModuleRoute");
-const resolveFileModuleRoute = require("./src/plugins/resolveFileModuleRoute");
+const resolveJsModule = require("./src/plugins/resolveJsModule");
+const resolveFileModule = require("./src/plugins/resolveFileModule");
 
 module.exports = {
     entry: [
@@ -15,8 +15,8 @@ module.exports = {
         }
     ],
     plugins: [
-        resolveJsModuleRoute,
-        resolveFileModuleRoute
+        resolveJsModule,
+        resolveFileModule
     ],
     alias: {
         "@": "example"

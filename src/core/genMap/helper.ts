@@ -3,12 +3,11 @@ import { Loader } from "../butterPackConfig.type";
 import { loaders } from "../genPackConfig";
 import { extname, join, basename } from "path";
 import { readFileSync } from "fs";
-import { parse } from "@babel/parser";
 import {
     resolveNpmModulePath,
     checkExistedFileExt,
     checkDefinedAliasPathSymbol,
-    findDynamicImportStatementSytax
+    genAllImportDeclarationSources
 } from "./utils";
 
 /**
@@ -57,25 +56,14 @@ export const genDeps = async (
 ): Promise<Dep[]> => {
     try {
         const depModuleInfo: Dep[] = [];
-        const result: any = parse(code, {
-            sourceType: "module",
-            plugins: [
-                "jsx",
-                "typescript"
-            ]
-        });
-        // parse没有对动态import区分type，所以手动处理
-        const DynamicImportDeclarationList: any[] = findDynamicImportStatementSytax(code);
-        let ImportDeclarationList: any[] = result.program.body.filter((node: any) => node.type === "ImportDeclaration");
-        ImportDeclarationList = [...ImportDeclarationList, ...DynamicImportDeclarationList];
+        const ASTResources = genAllImportDeclarationSources(code);
 
-        for (const item of ImportDeclarationList) {
+        for (const item of ASTResources) {
             const moduleVal: string = item.source.value;
             const replaceLoc: number[] = [item.source.start, item.source.end - 1];
             /* ------开始处理path的alias和extname补全------ */
             const { isNpmModule, modulePath } = resolveNpmModulePath(moduleVal);
             let path: string = "";
-            const lazyImport = item.lazyImport ? true : false;
             if (isNpmModule) {
                 path = modulePath;
             } else {
@@ -88,7 +76,7 @@ export const genDeps = async (
                 path = await checkExistedFileExt(path);
             }
             let esModulePath: string = path;
-            /* ----loader开始处理---- */
+            /* ----如果匹配loader，则需要处理文件后缀名为.js---- */
             const useLoader: Loader = loaders.find(({ rule }: Loader) => {
                 return rule.test(path);
             });
@@ -96,9 +84,19 @@ export const genDeps = async (
                 esModulePath = path.replace(extname(path), ".js");
             }
             esModulePath = `/${basename(esModulePath)}`;
-            /* ----loader处理结束---- */
-            const type: string = extname(esModulePath);
-            depModuleInfo.push({ path, esModulePath, type, moduleVal, replaceLoc, isNpmModule, lazyImport });
+            const extral = item.inputDeclarationType === "require" ? { isRequireDeclarationBlock: item.isRequireDeclarationBlock } : {};
+
+            depModuleInfo.push({
+                path,
+                esModulePath,
+                type: extname(esModulePath),
+                moduleVal,
+                replaceLoc,
+                isNpmModule,
+                lazyImport: item.lazyImport,
+                inputDeclarationType: item.inputDeclarationType,
+                ...extral
+            });
         }
         return depModuleInfo;
     } catch (error) {

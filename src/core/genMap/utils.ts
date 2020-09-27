@@ -1,5 +1,7 @@
 import { access, constants, readFile } from "fs";
 import { join, extname } from "path";
+import { parse } from "@babel/parser";
+import traverse from "@babel/traverse";
 import { fileExts, alias } from "../genPackConfig";
 import { ModuleInfo } from "./moduleMap.type";
 import { DYNAMIC_IMPORTED_STATEMENT_RULE } from "../constant";
@@ -105,13 +107,10 @@ export const resolveNpmModulePath = (path: string) => {
  * @param list
  */
 export const shakeModuleList = (list: ModuleInfo[]) => {
-    if (list.length > 1) {
-        for (let i = 0; i <= list.length - 1; i++) {
-            if (
-                i !== list.length - 1 &&
-                list[i].path === list[i + 1].path
-            ) {
-                list.splice(i, 1);
+    for (let i = 0; i <= list.length - 1; i++) {
+        for (let j = i + 1; j <= list.length - 1; j++) {
+            if (list[i].path === list[j].path) {
+                list.splice(j, 1);
                 i--;
             }
         }
@@ -139,7 +138,7 @@ export const trimAll = (str: string) => {
  * 
  * @param code
  */
-export const findDynamicImportStatementSytax = (code: string) => {
+export const findDynamicImportStatementSyntax = (code: string) => {
     const result = code.match(DYNAMIC_IMPORTED_STATEMENT_RULE);
     let list: any[] = [];
     if (result !== null) {
@@ -161,4 +160,59 @@ export const findDynamicImportStatementSytax = (code: string) => {
         });
     }
     return list;
+}
+
+/**
+ * 解析code中import静态导入声明、import动态导入声明、require静态导入声明的所有资源
+ * 
+ * @param code
+ */
+export const genAllImportDeclarationSources = (code: string) => {
+    const result = parse(code, {
+        sourceType: "module",
+        plugins: [
+            "jsx",
+            "typescript",
+            "estree"
+        ]
+    });
+
+    const ImportDeclarationList: any[] = [];
+    const DynamicImportDeclarationList: any[] = [];
+    const RequireDeclarationList: any = [];
+    // parse没有对动态import区分type，不支持原生require声明，所以手动遍历找到对应node
+    traverse(result, {
+        ImportDeclaration(path) {
+            const { node } = path;
+            if (node) {
+                ImportDeclarationList.push({
+                    source: node.source,
+                    lazyImport: false,
+                    inputDeclarationType: "import"
+                });
+            }
+        },
+        CallExpression(path) {
+            const { node, parent } = path;
+            const { callee } = node;
+            const { object, name }: any = callee;
+            const { type, source } = object || {};
+            if (type === "ImportExpression") {
+                DynamicImportDeclarationList.push({
+                    lazyImport: true,
+                    source,
+                    inputDeclarationType: "import"
+                });
+            }
+            if (name === "require") {
+                RequireDeclarationList.push({
+                    lazyImport: false,
+                    source: node.arguments[0],
+                    inputDeclarationType: "require",
+                    isRequireDeclarationBlock: node.start === parent.start
+                });
+            }
+        }
+    });
+    return [...ImportDeclarationList, ...DynamicImportDeclarationList, ...RequireDeclarationList];
 }

@@ -1,4 +1,4 @@
-import { resolve, extname } from "path";
+import { resolve } from "path";
 import { ModuleInfo, SingleEntryMap } from "./moduleMap.type";
 import { EntryConfig } from "../butterPackConfig.type";
 import { genCodeAndUseLoader, genDeps } from "./helper";
@@ -26,19 +26,19 @@ const readModuleAndDeps = async (rootPath: string, lazyLoad: boolean): Promise<M
  * 通过递归读取单个入口文件的所有依赖模块信息.
  * 
  * @param entryPath
- * @param lazyLoad
  * @param cb
+ * @param lazyLoad
  */
 const readEntryModuleRecursivly = async (
     entryPath: string,
-    lazyLoad: boolean,
-    cb: any
+    cb: any,
+    lazyLoad: boolean = false,
 ) => {
     try {
         const { deps, ...rest } = await readModuleAndDeps(entryPath, lazyLoad);
         cb({ deps, ...rest });
         for (const dep of deps) {
-            await readEntryModuleRecursivly(dep.path, dep.lazyImport, cb);
+            await readEntryModuleRecursivly(dep.path, cb, dep.lazyImport);
         }
     } catch (error) {
         return error;
@@ -56,7 +56,7 @@ export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Pro
         const entryPath: string = resolve(process.cwd(), script);
         const templatePath: string = resolve(process.cwd(), template);
         let moduleList: ModuleInfo[] = [];
-        await readEntryModuleRecursivly(entryPath, false, (item: ModuleInfo) => {
+        await readEntryModuleRecursivly(entryPath, (item: ModuleInfo) => {
             moduleList.push(item);
         });
         shakeModuleList(moduleList);

@@ -10,8 +10,11 @@ module.exports = (events, hooks) => {
         moduleList.forEach((moduleInfo, i) => {
             let { code, deps, type } = moduleInfo;
             if (type === ".js") {
-                deps.forEach(dep => {
-                    code = code.replace(new RegExp(`${dep.moduleVal}`, "g"), dep.esModulePath);
+                deps.forEach(({ type, moduleVal, esModulePath, inputDeclarationType }) => {
+                    if (inputDeclarationType === "require" && type === ".js") {
+                        code = code.replace(new RegExp(`require\s*(\.*${moduleVal}\.*)`, "g"), "");
+                    }
+                    code = code.replace(new RegExp(`${moduleVal}`, "g"), esModulePath);
                 });
                 newModuleList[i].code = code;
             }

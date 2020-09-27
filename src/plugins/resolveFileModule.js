@@ -3,12 +3,13 @@ const { readFileSync } = require("fs");
 const MIME_MAP = {
     ".png": "image/png",
     ".jpg": "image/jpg",
-    ".gif": "image/gif"
+    ".gif": "image/gif",
+    ".mp4": "video/mp4"
 };
 
 module.exports = (events, hooks) => {
     /**
-     * 在处理模块依赖图钩子时，处理所有模块code里面的引入图片代码
+     * 在处理模块依赖图钩子时，处理所有模块code里面的引入静态资源代码
      */
     events.on(hooks.HOOK_AFTER_RESOLVE_MODULELIST, (data) => {
         const [moduleList, setModuleList] = data;

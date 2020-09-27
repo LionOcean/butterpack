@@ -6,6 +6,8 @@ export declare interface Dep extends ModuleInfo {
     replaceLoc: number[]; // 依赖模块import地址的AST字段起始和结束索引
     isNpmModule: boolean; // 是否为npm模块
     lazyImport: boolean; // 模块是否被动态import导入
+    inputDeclarationType: 'import'|'require'; // 模块通过那种哪种方式声明被引入
+    isRequireDeclarationBlock?: boolean; // 如果模块通过require声明被引入，是否独占一行，也就是说require不是用来复制给变量
 }
 
 /**
