@@ -11,4 +11,3 @@
 // });
 
 require("./a");
-const a = require("./a");

@@ -3,6 +3,8 @@ import { ModuleInfo, SingleEntryMap } from "./moduleMap.type";
 import { EntryConfig } from "../butterPackConfig.type";
 import { genCodeAndUseLoader, genDeps } from "./helper";
 import { shakeModuleList } from "./utils";
+import eventBus from "../eventBus";
+import { HOOK_WHILE_RESOLVE_MODULE } from "../eventBus/constant";
 
 /**
  * 读取单个模块信息.
@@ -54,10 +56,12 @@ const readEntryModuleRecursivly = async (
 export const readEntryAndGenMap = async ({ script, template }: EntryConfig): Promise<SingleEntryMap> => {
     try {
         const entryPath: string = resolve(process.cwd(), script);
-        const templatePath: string = resolve(process.cwd(), template);
         let moduleList: ModuleInfo[] = [];
         await readEntryModuleRecursivly(entryPath, (item: ModuleInfo) => {
-            moduleList.push(item);
+            let moduleInfo = JSON.parse(JSON.stringify(item));
+            const setModuleInfo = (val: any) => moduleInfo = val;
+            eventBus.emit(HOOK_WHILE_RESOLVE_MODULE, [moduleInfo, setModuleInfo]);
+            moduleList.push(moduleInfo);
         });
         shakeModuleList(moduleList);
         return { entry: script, template, moduleList }

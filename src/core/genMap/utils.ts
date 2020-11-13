@@ -49,6 +49,8 @@ export const checkExistedFileExt = async (path: string) => {
             if (result) {
                 targetPath = pathFixed;
                 break;
+            } else {
+                throw new Error(`${path} is not found`);
             }
         }
         if (targetPath === "") {

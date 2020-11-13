@@ -12,5 +12,9 @@ export const fileExts = [...DEFAULT_EXTNAMES, ...config.fileExts];
 export const plugins = config.plugins;
 
 export const installPlugins = () => {
-    plugins.forEach((plugin: Plugin) => plugin(eventBus, hooks));
+    plugins.forEach((plugin: Plugin) => {
+        plugin(eventBus, hooks, (error: Error) => {
+            eventBus.emit("error", error);
+        });
+    });
 }

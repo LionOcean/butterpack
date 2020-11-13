@@ -1,9 +1,11 @@
 // import { num } from "@/components/b";
 // import br from "@alanchenchen/browserbuffer";
 
-import icon from "@/img/icon.png";
+const icon = require( "@/img/icon.png");
+console.log(icon);
+import obj from "@/person.json";
+console.log(obj);
 
 export const name = "alanchen";
 // export const age = num;
-export const age = 1
-console.log(icon);
+export const age = 1;

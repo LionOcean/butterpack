@@ -1,3 +1,8 @@
 const EventEmitter = require("events");
 
-export default new EventEmitter();
+const emitter = new EventEmitter();
+emitter.on("error", (err: Error) => {
+    console.log("[hook emit error]: ", err);
+});
+
+export default emitter;

@@ -1,6 +1,7 @@
 const ts_loader = require("./src/loaders/ts_loader");
 const resolveJsModule = require("./src/plugins/resolveJsModule");
 const resolveFileModule = require("./src/plugins/resolveFileModule");
+const resolveJSONModule = require("./src/plugins/resolveJSONModule");
 
 module.exports = {
     entry: [
@@ -16,7 +17,8 @@ module.exports = {
     ],
     plugins: [
         resolveJsModule,
-        resolveFileModule
+        resolveFileModule,
+        resolveJSONModule
     ],
     alias: {
         "@": "example"
